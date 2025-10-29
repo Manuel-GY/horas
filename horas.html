@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora Horas Extra y Bonos</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#121a2b; --muted:#8ca3c7; --text:#eaf0ff; --accent:#4ea1ff; --ok:#19c37d;
+      --danger:#ff6b6b; --warning:#f7b500; --border:#1f2a44;
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto,Arial}
+    .wrap{max-width:980px;margin:0 auto;padding:20px}
+    h1{font-size:1.5rem;margin:0 0 14px}
+    .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .tab-btn{border:1px solid var(--border);background:var(--card);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
+    .tab-btn.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(78,161,255,.15) inset}
+    .grid{display:grid;gap:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+    label{display:block;font-size:.95rem;margin-bottom:6px;color:var(--muted)}
+    input[type="number"]{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0f1726;color:var(--text)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .row>*{min-width:0}
+    .btns{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{border:1px solid var(--border);background:#0f1726;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#00122b}
+    .btn.good{background:var(--ok);border-color:var(--ok);color:#001b13}
+    .btn.warn{background:var(--warning);border-color:var(--warning);color:#231800}
+    .metric{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px dashed var(--border);border-radius:10px}
+    .metric strong{font-size:1.05rem}
+    .total{font-size:1.6rem;margin:6px 0 0}
+    .muted{color:var(--muted);font-size:.9rem}
+    @media (max-width:740px){.row,.row-3{grid-template-columns:1fr}}
+    a.link{color:var(--accent);text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🧮 Calculadora de Horas Extra y Bonos</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="calc">Calculadora</button>
+      <button class="tab-btn" data-tab="cfg">Configuración</button>
+    </div>
+
+    <!-- CALCULADORA -->
+    <section id="calc" class="tab grid">
+      <div class="card">
+        <h3>Ingresar horas / eventos</h3>
+        <div class="row-3">
+          <div><label>Horas 50%</label><input type="number" id="h50" min="0" step="1" value="0"></div>
+          <div><label>Horas 60%</label><input type="number" id="h60" min="0" step="1" value="0"></div>
+          <div><label>Horas 100%</label><input type="number" id="h100" min="0" step="1" value="0"></div>
+          <div><label>Horas 120%</label><input type="number" id="h120" min="0" step="1" value="0"></div>
+          <div><label>Horas nocturnas</label><input type="number" id="hnoct" min="0" step="1" value="0"></div>
+          <div><label>Llamados (eventos)</label><input type="number" id="nll" min="0" step="1" value="0"></div>
+          <div><label>Cambios de turno (eventos)</label><input type="number" id="nct" min="0" step="1" value="0"></div>
+        </div>
+        <div class="btns" style="margin-top:10px">
+          <button class="btn" id="btn-clear">Limpiar</button>
+        </div>
+        <p class="muted">Los valores base (tarifas/bonos) se editan en la pestaña <strong>Configuración</strong>.</p>
+      </div>
+
+      <div class="card">
+        <h3>Resultados</h3>
+        <div class="grid" id="resumen">
+          <div class="metric"><span>Subtotal 50%</span><strong id="sub50">$0</strong></div>
+          <div class="metric"><span>Subtotal 60%</span><strong id="sub60">$0</strong></div>
+          <div class="metric"><span>Subtotal 100%</span><strong id="sub100">$0</strong></div>
+          <div class="metric"><span>Subtotal 120%</span><strong id="sub120">$0</strong></div>
+          <div class="metric"><span>Bonificación Nocturna</span><strong id="noct">$0</strong></div>
+          <div class="metric"><span>Bonos Llamados</span><strong id="bll">$0</strong></div>
+          <div class="metric"><span>Bonos Cambios</span><strong id="bct">$0</strong></div>
+        </div>
+        <div class="total" id="total">$0</div>
+
+        <div class="btns" style="margin-top:10px">
+          <button class="btn primary" id="btn-export">Descargar resumen (CSV)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACIÓN -->
+    <section id="cfg" class="tab grid" style="display:none">
+      <div class="card">
+        <h3>Bases de cálculo</h3>
+        <div class="row-3">
+          <div><label>Hora 50% ($/h)</label><input type="number" id="t50" min="0" step="1"></div>
+          <div><label>Hora 60% ($/h)</label><input type="number" id="t60" min="0" step="1"></div>
+          <div><label>Hora 100% ($/h)</label><input type="number" id="t100" min="0" step="1"></div>
+          <div><label>Hora 120% ($/h)</label><input type="number" id="t120" min="0" step="1"></div>
+          <div><label>Bonificación nocturna ($/h)</label><input type="number" id="tnoct" min="0" step="1"></div>
+          <div><label>Bono llamado ($/evento)</label><input type="number" id="bllv" min="0" step="1"></div>
+          <div><label>Bono cambio turno ($/evento)</label><input type="number" id="bctv" min="0" step="1"></div>
+        </div>
+        <div class="btns" style="margin-top:10px">
+          <button class="btn good" id="btn-save">Guardar configuración</button>
+          <button class="btn warn" id="btn-reset">Restaurar predeterminados</button>
+        </div>
+        <p class="muted">La configuración se guarda en este dispositivo (localStorage). Si publicas la página, cada usuario podrá definir sus propios valores.</p>
+      </div>
+    </section>
+
+    <p class="muted">¿Cómo publicar? Sube este archivo a <a class="link" href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a> o <a class="link" href="https://www.netlify.com/" target="_blank" rel="noopener">Netlify</a> y ábrelo desde tu iPhone.</p>
+  </div>
+
+  <script>
+    // ------- Utilidades -------
+    const DEFAULTS = {
+      tarifa_50: 12443,
+      tarifa_60: 13275,
+      tarifa_100: 16591,
+      tarifa_120: 19909,
+      tarifa_nocturna: 3698,
+      bono_llamado: 43000,
+      bono_cambio: 40000
+    };
+    const LS_KEY = "horas_cfg_v1";
+
+    const $ = s => document.querySelector(s);
+    const fmt = n => {
+      n = Math.round(Number(n)||0);
+      return "$" + n.toLocaleString("es-CL");
+    };
+
+    function loadCfg(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if(!raw) return {...DEFAULTS};
+        const obj = JSON.parse(raw);
+        return {...DEFAULTS, ...obj};
+      }catch(e){ return {...DEFAULTS}; }
+    }
+    function saveCfg(cfg){
+      localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    }
+
+    let CFG = loadCfg();
+
+    // ------- Tabs -------
+    document.querySelectorAll(".tab-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        document.querySelectorAll("section.tab").forEach(s=>s.style.display="none");
+        document.getElementById(tab).style.display="grid";
+        if(tab==="cfg") paintCfg();
+        if(tab==="calc") calc();
+      });
+    });
+
+    // ------- Inputs Calculadora -------
+    const inputsCalc = ["h50","h60","h100","h120","hnoct","nll","nct"].map(id=>$("#"+id));
+    inputsCalc.forEach(inp=>inp.addEventListener("input", calc));
+    $("#btn-clear").addEventListener("click", ()=>{
+      inputsCalc.forEach(inp=>inp.value = "0");
+      calc();
+    });
+
+    // ------- Config -------
+    function paintCfg(){
+      $("#t50").value = CFG.tarifa_50;
+      $("#t60").value = CFG.tarifa_60;
+      $("#t100").value = CFG.tarifa_100;
+      $("#t120").value = CFG.tarifa_120;
+      $("#tnoct").value = CFG.tarifa_nocturna;
+      $("#bllv").value = CFG.bono_llamado;
+      $("#bctv").value = CFG.bono_cambio;
+    }
+    $("#btn-save").addEventListener("click", ()=>{
+      CFG = {
+        tarifa_50: +$("#t50").value || 0,
+        tarifa_60: +$("#t60").value || 0,
+        tarifa_100: +$("#t100").value || 0,
+        tarifa_120: +$("#t120").value || 0,
+        tarifa_nocturna: +$("#tnoct").value || 0,
+        bono_llamado: +$("#bllv").value || 0,
+        bono_cambio: +$("#bctv").value || 0
+      };
+      saveCfg(CFG);
+      alert("Configuración guardada.");
+      calc();
+    });
+    $("#btn-reset").addEventListener("click", ()=>{
+      CFG = {...DEFAULTS};
+      saveCfg(CFG);
+      paintCfg();
+      calc();
+      alert("Predeterminados restaurados.");
+    });
+
+    // ------- Cálculo -------
+    function calc(){
+      const c = CFG;
+      const h50 = +$("#h50").value||0;
+      const h60 = +$("#h60").value||0;
+      const h100 = +$("#h100").value||0;
+      const h120 = +$("#h120").value||0;
+      const hnoct = +$("#hnoct").value||0;
+      const nll = +$("#nll").value||0;
+      const nct = +$("#nct").value||0;
+
+      const sub50 = c.tarifa_50 * h50;
+      const sub60 = c.tarifa_60 * h60;
+      const sub100 = c.tarifa_100 * h100;
+      const sub120 = c.tarifa_120 * h120;
+      const noct = c.tarifa_nocturna * hnoct;
+      const bll = c.bono_llamado * nll;
+      const bct = c.bono_cambio * nct;
+      const total = sub50+sub60+sub100+sub120+noct+bll+bct;
+
+      $("#sub50").textContent = fmt(sub50);
+      $("#sub60").textContent = fmt(sub60);
+      $("#sub100").textContent = fmt(sub100);
+      $("#sub120").textContent = fmt(sub120);
+      $("#noct").textContent = fmt(noct);
+      $("#bll").textContent = fmt(bll);
+      $("#bct").textContent = fmt(bct);
+      $("#total").textContent = fmt(total);
+    }
+
+    // ------- Exportar CSV -------
+    $("#btn-export").addEventListener("click", ()=>{
+      const c = CFG;
+      const vals = {
+        h50:+$("#h50").value||0, h60:+$("#h60").value||0, h100:+$("#h100").value||0, h120:+$("#h120").value||0,
+        hnoct:+$("#hnoct").value||0, nll:+$("#nll").value||0, nct:+$("#nct").value||0
+      };
+      const rows = [
+        ["Horas 50%", vals.h50, c.tarifa_50, c.tarifa_50*vals.h50],
+        ["Horas 60%", vals.h60, c.tarifa_60, c.tarifa_60*vals.h60],
+        ["Horas 100%", vals.h100, c.tarifa_100, c.tarifa_100*vals.h100],
+        ["Horas 120%", vals.h120, c.tarifa_120, c.tarifa_120*vals.h120],
+        ["Horas nocturnas", vals.hnoct, c.tarifa_nocturna, c.tarifa_nocturna*vals.hnoct],
+        ["Llamados (eventos)", vals.nll, c.bono_llamado, c.bono_llamado*vals.nll],
+        ["Cambios de turno (eventos)", vals.nct, c.bono_cambio, c.bono_cambio*vals.nct],
+      ];
+      const total = rows.reduce((acc,r)=>acc+(+r[3]||0),0);
+      let csv = "Concepto,Cantidad,Valor,Subtotal\n";
+      rows.forEach(r => csv += `${r[0]},${r[1]},${Math.round(r[2])},${Math.round(r[3])}\n`);
+      csv += `TOTAL,,,${Math.round(total)}\n`;
+
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resumen_horas_bonos.csv"; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Inicio
+    paintCfg(); calc();
+  </script>
+</body>
+</html>
